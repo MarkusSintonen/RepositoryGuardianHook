@@ -1,0 +1,176 @@
+{namespace com.github.markus.stashplugins.RepositoryGuardianHook}
+
+/**
+ * Configuration for repo guardian hook
+ *
+ * @param config
+ * @param? errors
+ */
+{template .config}
+	{literal}
+		<style>
+			#xmlExpression {
+				width: 100% !important;
+				max-width: 100% !important;
+				min-height: 60px !important;
+				white-space: pre !important;
+				word-wrap: normal !important;
+				overflow: auto !important;
+			
+				-moz-tab-size : 4;
+				-o-tab-size : 4;
+				tab-size : 4;
+				font: normal normal normal normal 13.3333330154419px/normal monospace;
+			}
+			
+			#exampleXmlContainer {
+				display: none;
+				width: 100%;
+			}
+			
+			#exampleXmlContainer textarea {
+				width: 100%;
+				max-width: 100%;
+				height: 250px;
+				-moz-tab-size : 4;
+				-o-tab-size : 4;
+				tab-size : 4;
+				white-space: pre !important;
+				word-wrap: normal !important;
+				overflow: auto !important;
+				font: normal normal normal normal 13.3333330154419px/normal monospace;
+			}
+		</style>
+		
+		<script type="text/javascript">
+			jQuery(document).ready(function() {
+				jQuery("#xmlExpression").closest(".hook-config-contents").css("min-height", "500px");
+			
+				var xmlDescrElem = jQuery("#xmlExpression").closest(".field-group").find(":contains('Rules in XML format.')");
+				xmlDescrElem.html(xmlDescrElem.text());
+				
+				jQuery("#exampleXmlContainer").remove().appendTo(xmlDescrElem);
+				
+				xmlDescrElem.find("a").click(function(event){
+					event.preventDefault();
+					jQuery("#exampleXmlContainer").toggle();
+				});
+				
+				var isShiftPressed = false;
+				
+				jQuery("#xmlExpression").keydown(function(e) {
+					if(e.keyCode === 9) { // tab was pressed
+						// get caret position/selection
+						var start = this.selectionStart;
+						var end = this.selectionEnd;
+
+						var $this = jQuery(this);
+						var value = $this.val();
+						
+						if (isShiftPressed) {
+							if (start > 0 && value.substring(start - 1, start) === "\t") {
+								// remove one tab
+								$this.val(value.slice(0, start)
+										+ value.slice(start));
+								
+								// put caret at right position again (remove one from the tab)
+								this.selectionStart = this.selectionEnd = start - 1;
+							}
+						}
+						else {
+							// set textarea value to: text before caret + tab + text after caret
+							$this.val(value.substring(0, start)
+										+ "\t"
+										+ value.substring(end));
+										
+							// put caret at right position again (add one for the tab)
+							this.selectionStart = this.selectionEnd = start + 1;
+						}
+
+						// prevent the focus lose
+						e.preventDefault();
+					}
+					else if (e.keyCode === 16) {
+						isShiftPressed = true;
+					}
+				});
+				
+				jQuery("#xmlExpression").keyup(function(e) {
+					if (e.keyCode === 16) {
+						isShiftPressed = false;
+					}
+				});
+			});
+		</script>
+	{/literal}
+	
+	{call aui.form.textareaField}
+        {param id: 'xmlExpression'/}
+        {param value: $config['xmlExpression'] /}
+        {param isRequired: true /}
+        {param labelContent: 'XML Expression'/}
+        {param descriptionText: 'Rules in XML format. Click here to see <a href="#">example XML definition</a>'/}
+        {param errorTexts: $errors ? $errors['xmlExpression'] : null /}
+    {/call}
+	
+	{literal}
+		<div id="exampleXmlContainer">
+			<textarea readonly>
+
+<AuthRules>
+	<!--
+	This condition protects root 'src' and 'lib' folders except for 'src/test' folder
+	All branches except for 'hotfix-XXX' are protected.
+	John and Jack as well as 'some-admins' group can freely push to protected folders.
+	-->
+	<DenyCondition message="Access denied 1">
+		<WhenAll>
+			<WhenAny>
+				<!-- Here match function evaluates whether any of the commit paths match to glob pattern -->
+				<!-- Type can be "glob", "regex" or "exact". Where "exact" is the default one and can be omitted. -->
+				<Match value="paths" type="glob">src/*</Match>
+				
+				<!-- Evaluates whether any of the commit paths match to regular expression -->
+				<Match value="paths" type="regex">^lib/.*</Match>
+			</WhenAny>
+			
+			<NotWhenAny>
+				<Match value="paths" type="glob">src/test/*</Match>
+				
+				<!-- Evaluates whether branch matches to glob pattern -->
+				<Match value="branch" type="glob">refs/heads/hotfix-*</Match>
+				
+				<!-- Evaluates whether user matches -->
+				<Match value="user">john</Match>
+				<Match value="user">jack</Match>
+				
+				<!-- Evaluates if any of the user group matches this -->
+				<Match value="groups">some-admins</Match>
+			</NotWhenAny>
+		</WhenAll>
+	</DenyCondition>
+	
+	<!--
+	This condition protects root 'project1' folder.
+	'feature-XXX' branches are protected except for 'feature-1' branch.
+	Mark and users under 'users-XXX' group can freely push to protected folders.
+	-->
+	<DenyCondition message="Access denied 2">
+		<WhenAll>
+			<WhenAny>
+				<Match value="paths" type="glob">project1/*</Match>
+				<Match value="branch" type="glob">refs/heads/feature-*</Match>
+			</WhenAny>
+			
+			<NotWhenAny>
+				<Match value="branch">refs/heads/feature-1</Match>
+				<Match value="user">mark</Match>
+				<Match value="groups" type="glob">users-*</Match>
+			</NotWhenAny>
+		</WhenAll>
+	</DenyCondition>
+</AuthRules>
+			</textarea>
+		</div>
+	{/literal}
+{/template}

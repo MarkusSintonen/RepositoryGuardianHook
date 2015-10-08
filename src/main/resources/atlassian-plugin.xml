@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}" />
+        <param name="plugin-icon">images/pluginIcon.png</param>
+        <param name="plugin-logo">images/pluginLogo.png</param>
+    </plugin-info>
+	
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="RepositoryGuardianHook" />
+	
+    <!-- add our web resources -->
+    <web-resource key="RepositoryGuardianHook-resources" name="RepositoryGuardianHook Web Resources">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download" name="images/" location="/images" />
+        <context>RepositoryGuardianHook</context>
+    </web-resource>
+    
+    <!-- import from the product container -->
+    <component-import key="commitService" interface="com.atlassian.stash.commit.CommitService" />
+	<component-import key="userService" interface="com.atlassian.stash.user.UserService" />
+	<component-import key="stashAuthenticationContext" interface="com.atlassian.stash.user.StashAuthenticationContext" />
+	
+    <repository-hook name="Repository Guardian Hook" i18n-name-key="repository-guardian-hook.name" key="repository-guardian-hook" class="com.github.markus.stashplugins.RepositoryGuardianHook">
+        <description key="repository-guardian-hook.description">Repository Guardian Hook</description>
+		<config-form name="Repository Guardian Hook" key="guardianConfig">
+            <view>com.github.markus.stashplugins.RepositoryGuardianHook.config</view>
+            <directory location="config-form" />
+        </config-form>
+        <icon>icon-example.png</icon>
+		<validator>com.github.markus.stashplugins.SettingsValidator</validator>
+    </repository-hook>
+</atlassian-plugin>
